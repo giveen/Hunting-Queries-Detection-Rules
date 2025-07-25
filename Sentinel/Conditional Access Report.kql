@@ -7,14 +7,19 @@
 
 SigninLogs
 | where TimeGenerated > ago(30d)
-// Additional Toggle to determine CA result for success/failure login
-//| where ResultType == "0"
-| where ConditionalAccessPolicies != "[]"
+| where isnotempty(ConditionalAccessPolicies)
+// Optional: Filter for successful logins only
+// | where ResultType == "0"
 | mv-expand ConditionalAccessPolicies
-| extend CADisplayName = tostring(ConditionalAccessPolicies.displayName)
-| extend CAResult = tostring(ConditionalAccessPolicies.result)
-| summarize Count=count() by CADisplayName, CAResult
-| sort by CADisplayName asc 
+| project 
+    TimeGenerated,
+    UserPrincipalName,
+    AppDisplayName,
+    CADisplayName = tostring(ConditionalAccessPolicies.displayName),
+    CAResult = tostring(ConditionalAccessPolicies.result)
+| summarize Count = count() by CADisplayName, CAResult
+| sort by CADisplayName asc
+
 
 // MITRE ATT&CK Mapping
 
