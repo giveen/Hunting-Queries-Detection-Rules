@@ -6,10 +6,19 @@ BehaviorAnalytics
 | where TimeGenerated > ago(7d)
 | where ActivityType == "FailedLogOn" and EventSource == "Azure AD"
 | where DevicesInsights has "ThreatIntelIndicatorType"
-| extend ThreatType = tostring(DevicesInsights.ThreatIntelIndicatorType)
+| extend 
+    ThreatType = tostring(DevicesInsights.ThreatIntelIndicatorType),
+    SourceIP = tostring(SourceIPAddress),
+    SourceCountry = tostring(SourceIPLocation)
 | where InvestigationPriority > 0
 | where ThreatType has "Bruteforce" or ThreatType has "Botnet" or ThreatType has "Watchlist"
-| summarize NumofIPAttack=dcount(SourceIPAddress), NumofCountryAttack=dcount(SourceIPLocation) by UserPrincipalName
+| summarize 
+    NumofIPAttack = dcount(SourceIP),
+    NumofCountryAttack = dcount(SourceCountry),
+    IPs = make_set(SourceIP, 100),
+    Countries = make_set(SourceCountry, 100)
+    by UserPrincipalName
 | top 10 by NumofIPAttack desc
+
 
 //The MITRE ATT&CK technique for password spray attacks is T1110.0031
