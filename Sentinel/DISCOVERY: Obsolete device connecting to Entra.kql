@@ -3,10 +3,41 @@
 
 // Detect unpatched Windows 10 and 11 clients connecting to your Entra tenant via AADSTS5000611 (Symmetric Key Derivation Function version 'KDFV1' is invalid)
 
-union isfuzzy=true SigninLogs, AADNonInteractiveUserSignInLogs
-| where ResultType != 0 and ResultDescription == "Other"
-| where ResultType == "500061"
-| distinct Category, Identity
+union isfuzzy=true
+    (
+        SigninLogs
+        | where ResultType == 500061
+        | where ResultDescription has "KDFV1"
+        | extend DeviceDetailParsed = parse_json(tostring(DeviceDetail))
+        | extend 
+            OperatingSystem = tostring(DeviceDetailParsed.operatingSystem),
+            Browser = tostring(DeviceDetailParsed.browser)
+    ),
+    (
+        AADNonInteractiveUserSignInLogs
+        | where ResultType == 500061
+        | where ResultDescription has "KDFV1"
+        | extend OperatingSystem = "Unknown", Browser = "Unknown"
+    )
+| where OperatingSystem has "Windows"
+| project 
+    TimeGenerated,
+    Identity,
+    OperatingSystem,
+    Browser,
+    AppDisplayName,
+    ResourceDisplayName,
+    IPAddress,
+    Location,
+    ResultType,
+    ResultDescription
+| summarize 
+    Count = count(), 
+    FirstSeen = min(TimeGenerated), 
+    LastSeen = max(TimeGenerated) 
+    by Identity, OperatingSystem, Browser, AppDisplayName, IPAddress
+| sort by Count desc
+
 
 
 // MITRE ATT&CK Mapping
