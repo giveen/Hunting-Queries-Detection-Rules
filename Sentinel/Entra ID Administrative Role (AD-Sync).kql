@@ -1,13 +1,12 @@
 // Entra ID Administrative Role (AD-Sync)
 
 IdentityInfo
-| where Timestamp > ago(30d)
+| where TimeGenerated > ago(30d)
 | where AssignedRoles != ""
 | mv-expand AssignedRoles
 | extend EntraAdminRole = tostring(AssignedRoles)
-| where OnPremSid != ""
-| distinct EntraAdminRole, AccountUpn
-| where AccountUpn != ""
+| where isnotempty(SAMAccountName)
+| distinct EntraAdminRole, SAMAccountName
 | sort by EntraAdminRole asc
 
 // MITRE ATT&CK Mapping
