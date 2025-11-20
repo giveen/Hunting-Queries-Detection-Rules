@@ -6,19 +6,20 @@
 // Using Sentinel and the below KQL will provide you the statistics ("Success"/"Failure"/"Not applied") of all your conditional access rules based on certain number of days. You can further summarize these set of data to better understand your conditional access rule trigger and tweak it to improve the security controls. 🛡
 
 SigninLogs
-| where TimeGenerated > ago(30d)
+| where TimeGenerated > ago(30d)          // Adjust as needed
 | where isnotempty(ConditionalAccessPolicies)
-// Optional: Filter for successful logins only
-// | where ResultType == "0"
 | mv-expand ConditionalAccessPolicies
 | project 
     TimeGenerated,
     UserPrincipalName,
     AppDisplayName,
-    CADisplayName = tostring(ConditionalAccessPolicies.displayName),
-    CAResult = tostring(ConditionalAccessPolicies.result)
-| summarize Count = count() by CADisplayName, CAResult
-| sort by CADisplayName asc
+    PolicyName = tostring(ConditionalAccessPolicies.displayName),
+    PolicyOutcome = tostring(ConditionalAccessPolicies.result)
+| summarize TotalCount = count() by PolicyName, PolicyOutcome
+| sort by PolicyName asc
+
+// Optional: Include only successful logins
+// | where ResultType == "0"
 
 
 // MITRE ATT&CK Mapping
