@@ -6,11 +6,14 @@
 // ASN 53667 Lookup - https://lnkd.in/gAVK5htd
 
 SigninLogs
-| where TimeGenerated > ago(30d)
-| where ResultType == "50126" or ResultType == "50053"
-| where UserAgent == "node-fetch"
+| where TimeGenerated > ago(30d)          // Adjust as required (e.g., ago(1d))
+| where ResultType in ('50126', '50053')   // Add additional failure codes if needed
+| where UserAgent contains "node-fetch"  // Wildcard for variations
 | where AutonomousSystemNumber == "53667"
 | where AppDisplayName == "Microsoft Azure CLI"
+
+// Optional: If you want to include a range of ASNs
+// | where AutonomousSystemNumber in ('53667', '53500-53800')
 
 // MITRE ATT&CK Mapping
 
